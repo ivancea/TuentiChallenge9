@@ -1,4 +1,4 @@
-main.exe <sampleInput.txt >sampleOutput.txt
-main.exe <testInput.txt >testOutput.txt
-main.exe <submitInput.txt >submitOutput.txt
+python main.py <sampleInput.txt >sampleOutput.txt
+python main.py <testInput.txt >testOutput.txt
+python main.py <submitInput.txt >submitOutput.txt
 pause
