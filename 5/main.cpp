@@ -5,8 +5,10 @@
 using namespace std;
 
 const vector<string> keyboard = {
-    "",
-    ""
+    "1234567890",
+    "QWERTYUIOP",
+    "ASDFGHJKL;",
+    "ZXCVBNM,.-"
 };
 
 int main(){
