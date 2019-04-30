@@ -21,8 +21,82 @@ bool hasOneDifferentLetter(const string& word) {
     return letters.size() == 1;
 }
 
+void coutOrderMap(const map<char, set<char>>& letterToGreaterLetters) {
+    cerr << endl;
+    for (auto& p : letterToGreaterLetters) {
+        char letter = p.first;
+
+        for (char greaterLetter : p.second) {
+            cerr << letter << " < " << greaterLetter << endl;
+        }
+    }
+}
+
+void removeFromMap(map<char, set<char>>& m, char letter) {
+    m.erase(letter);
+
+    for(auto it = m.begin(); it != m.end();) {
+        it->second.erase(letter);
+
+        if (it->second.empty()) {
+            it = m.erase(it);
+        } else {
+            it++;
+        }
+    }
+}
+
+string getOrdered(set<char>& allLetters, map<char, set<char>>& letterToGreaterLetters, map<char, set<char>>& letterToLesserLetters) {
+    char firstLetter;
+    char lastLetter;
+
+    std::set<int> firstLetters;
+    std::set<int> lastLetters;
+
+    for (auto& p : letterToGreaterLetters) {
+        if (!contains(letterToLesserLetters, p.first)) {
+            firstLetters.insert(p.first);
+        }
+    }
+
+    if (firstLetters.size() != 1) {
+        throw firstLetters.size();
+    }
+
+    for (auto& p : letterToLesserLetters) {
+        if (!contains(letterToGreaterLetters, p.first)) {
+            lastLetters.insert(p.first);
+        }
+    }
+
+    if (lastLetters.size() != 1) {
+        throw 100 + lastLetters.size();
+    }
+
+    firstLetter = *firstLetters.begin();
+    lastLetter = *lastLetters.begin();
+
+    removeFromMap(letterToGreaterLetters, firstLetter);
+    removeFromMap(letterToGreaterLetters, lastLetter);
+    removeFromMap(letterToLesserLetters, firstLetter);
+    removeFromMap(letterToLesserLetters, lastLetter);
+
+    allLetters.erase(firstLetter);
+    allLetters.erase(lastLetter);
+
+    if (allLetters.empty()) {
+        return firstLetter + string() + lastLetter;
+    }
+
+    if (allLetters.size() == 1) {
+        return firstLetter + string(&*allLetters.begin(), 1) + lastLetter;
+    }
+
+    return firstLetter + getOrdered(allLetters, letterToGreaterLetters, letterToLesserLetters) + lastLetter;
+}
+
 bool solve(int caseNumber, const vector<string>& words, string& orderedLetters) {
-    int debugCase = 57;
+    int debugCase = -1;
 
     string const* lastWord = nullptr;
 
@@ -31,6 +105,7 @@ bool solve(int caseNumber, const vector<string>& words, string& orderedLetters) 
      * Value: Letters that are greater than the key
      * */
     map<char, set<char>> letterToGreaterLetters;
+    map<char, set<char>> letterToLesserLetters;
 
     set<char> allLetters;
 
@@ -39,6 +114,7 @@ bool solve(int caseNumber, const vector<string>& words, string& orderedLetters) 
             for (int i = 0; i < lastWord->size() && i < word.size(); i++) {
                 if ((*lastWord)[i] != word[i]) {
                     letterToGreaterLetters[(*lastWord)[i]].emplace(word[i]);
+                    letterToLesserLetters[word[i]].emplace((*lastWord)[i]);
 
                     allLetters.emplace((*lastWord)[i]);
                     allLetters.emplace(word[i]);
@@ -69,17 +145,18 @@ bool solve(int caseNumber, const vector<string>& words, string& orderedLetters) 
     }
 
     if (caseNumber == debugCase) {
-        cerr << endl;
-        for (auto& p : letterToGreaterLetters) {
-            char letter = p.first;
-
-            for (char greaterLetter : p.second) {
-                cerr << letter << " < " << greaterLetter << endl;
-            }
-        }
+        coutOrderMap(letterToGreaterLetters);
     }
 
-    while (!allLetters.empty()) {
+    try {
+        orderedLetters = getOrdered(allLetters, letterToGreaterLetters, letterToLesserLetters);
+
+        return true;
+    } catch (unsigned long long err) {
+        return false;
+    }
+
+    /*while (!allLetters.empty()) {
         bool ok = false;
 
         for(char letter : allLetters) {
@@ -127,6 +204,7 @@ bool solve(int caseNumber, const vector<string>& words, string& orderedLetters) 
     }
 
     return true;
+    */
 }
 
 int main(){
