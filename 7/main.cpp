@@ -28,9 +28,42 @@ void coutHash(const vector<char>& hash) {
     cout << ']' << endl;
 }
 
-string makePrintZone(int initialIndex, const vector<char>& initialHash, const vector<char>& targetHash) {
+
+bool canMakeDiff(char diff, int elementCount) {
+    // TODO
+}
+
+string makePrintZone(int initialOffset, const vector<char>& initialHash, const vector<char>& targetHash, const string& remainingText) {
+    vector<char> diffs(targetHash);
+
+    for(int i = 0; i < remainingText.size(); i++) { // Test this block: if remainingText == all the text, diffs = {0}
+        diffs[(initialOffset + i) % 16] -= remainingText[i];
+    }
+
+    vector<int> newElements(16, 0);
+
+    for(int nextElementOffset = 0; ; nextElementOffset++) {
+        newElements[(initialOffset + nextElementOffset) % 16]++;
+
+        bool isPossible = true;
+
+        for(int i = 0; i < newElements.size(); i++) {
+            if (!canMakeDiff(diffs[(initialOffset + nextElementOffset + i) % 16], newElements[i])) {
+                isPossible = false;
+                break;
+            }
+        }
+
+        if (isPossible) {
+            // Make vectors of optimized chars
+            // Convert them to string
+            // Return it
+        }
+    }
 
 }
+
+
 
 int main(){
     int caseCount;
@@ -65,12 +98,15 @@ int main(){
             alteredText += line;
         }
 
-        vector<char> originalHash = hashText(originalText);
-
         int printTextPosition = alteredText.find("------") + 3;
+
+        vector<char> originalHash = hashText(originalText);
+        vector<char> alteredHashUntilPrintZone = hashText(alteredText.substr(0, printTextPosition));
 
 
         coutHash(originalHash);
+
+        string result = makePrintZone(printTextPosition, alteredHashUntilPrintZone, originalHash, alteredText.substr(printTextPosition))
 
         cout << "Case #" << caseNumber << ": " << endl;
     }
