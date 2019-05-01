@@ -16,7 +16,7 @@ const Byte MIN_BYTE = 48;
 
 const string PRINT_SEPARATOR = "---";
 
-//istream& in = cin;
+istream& in = cin;
 
 /*istringstream in = istringstream(R"_(1
 3
@@ -28,7 +28,7 @@ a
 ------
 aaaaaaaaaaaaaa)_");*/
 
-istringstream in = istringstream(R"_(1
+/*istringstream in = istringstream(R"_(1
 3
 Subject: Boat;From: Charlie;To: Desmond;
 ------
@@ -36,7 +36,7 @@ Not Penny's boat
 3
 Subject: Boat;From: Charlie;To: Desmond;
 ------
-Penny's boat :))_");
+Penny's boat :))_");*/
 
 
 
@@ -134,14 +134,12 @@ string makePrintArea(int initialOffset, const vector<Byte>& diffs, int elementsI
     return result;
 }
 
-string makePrintZone(int initialOffset, const vector<Byte>& initialHash, const vector<Byte>& targetHash, const string& remainingText) {
-    vector<Byte> diffs = generateDiffs(initialOffset, initialHash, targetHash, remainingText);
-    
-    cerr << "Diffs: " << diffs << endl;
-
+string solve(int initialOffset, const vector<Byte>& initialHash, const vector<Byte>& targetHash, const string& remainingText) {
     vector<int> newElements(HASH_SIZE, 0);
 
     for(int elementsInserted = 0; ; elementsInserted++) {
+        vector<Byte> diffs = generateDiffs(initialOffset + elementsInserted, initialHash, targetHash, remainingText);
+
         if (isPossible(diffs, elementsInserted, newElements)) {
             cerr << "Elements inserted: " << elementsInserted << endl;
 
@@ -151,8 +149,6 @@ string makePrintZone(int initialOffset, const vector<Byte>& initialHash, const v
         // Insert element and rotate diffs
         newElements[(initialOffset + elementsInserted) % HASH_SIZE]++;
 
-        diffs.insert(diffs.begin(), diffs.back());
-        diffs.erase(diffs.begin() + diffs.size() - 1);
     }
 
     return "";
@@ -200,9 +196,9 @@ int main(){
 
         cerr << "Original: " << originalHash << endl;
         cerr << "Altered: " << alteredHash << endl;
-        cout << "Initial offset: " << (printTextPosition % 16) << endl;
+        cerr << "Initial offset: " << (printTextPosition % 16) << endl;
 
-        string result = makePrintZone(printTextPosition, alteredHashUntilPrintZone, originalHash, alteredText.substr(printTextPosition));
+        string result = solve(printTextPosition, alteredHashUntilPrintZone, originalHash, alteredText.substr(printTextPosition));
 
         vector<Byte> finalHash = hashText(alteredText.substr(0, printTextPosition) + result + alteredText.substr(printTextPosition));
 
