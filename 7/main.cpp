@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <map>
@@ -6,108 +7,208 @@
 
 using namespace std;
 
-vector<char> hashText(string text, vector<char> hash = vector<char>(16, 0), int offset = 0) {
+using Byte = uint8_t;
+
+const int HASH_SIZE = 16;
+
+const Byte MAX_BYTE = 122;
+const Byte MIN_BYTE = 48;
+
+const string PRINT_SEPARATOR = "---";
+
+//istream& in = cin;
+
+/*istringstream in = istringstream(R"_(1
+3
+b
+------
+a
+3
+a
+------
+aaaaaaaaaaaaaa)_");*/
+
+istringstream in = istringstream(R"_(1
+3
+Subject: Boat;From: Charlie;To: Desmond;
+------
+Not Penny's boat
+3
+Subject: Boat;From: Charlie;To: Desmond;
+------
+Penny's boat :))_");
+
+
+
+template<typename T>
+ostream& operator<<(ostream& o, const vector<T>& hash) {
+    o << '[';
+
+    for (int i = 0; i < hash.size(); i++) {
+        if (i != 0) {
+            o << ", ";
+        }
+
+        o << (int)hash[i];
+    }
+    
+    o << ']';
+
+    return o;
+}
+
+vector<Byte> hashText(string text, vector<Byte> hash = vector<Byte>(HASH_SIZE, 0), int offset = 0) {
     for (int i = 0; i < text.size(); i++) {
-        hash[(offset + i) % 16] += text[i];
+        hash[(offset + i) % HASH_SIZE] += text[i];
     }
 
     return hash;
 }
 
-void coutHash(const vector<char>& hash) {
-    cout << '[';
+vector<Byte> generateDiffs(int initialOffset, const vector<Byte>& initialHash, const vector<Byte>& targetHash, const string& remainingText) {
+    vector<Byte> diffs(targetHash);
 
-    for (int i = 0; i < hash.size(); i++) {
-        if (i != 0) {
-            cout << ", ";
-        }
-
-        cout << (int)hash[i];
-    }
-    
-    cout << ']' << endl;
-}
-
-
-bool canMakeDiff(char diff, int elementCount) {
-    // TODO
-}
-
-string makePrintZone(int initialOffset, const vector<char>& initialHash, const vector<char>& targetHash, const string& remainingText) {
-    vector<char> diffs(targetHash);
-
-    for(int i = 0; i < remainingText.size(); i++) { // Test this block: if remainingText == all the text, diffs = {0}
-        diffs[(initialOffset + i) % 16] -= remainingText[i];
+    for(int i = 0; i < initialHash.size(); i++) {
+        diffs[i] -= initialHash[i];
     }
 
-    vector<int> newElements(16, 0);
+    for(int i = 0; i < remainingText.size(); i++) {
+        diffs[(initialOffset + i) % HASH_SIZE] -= remainingText[i];
+    }
 
-    for(int nextElementOffset = 0; ; nextElementOffset++) {
-        newElements[(initialOffset + nextElementOffset) % 16]++;
+    return diffs;
+}
 
-        bool isPossible = true;
+bool canMakeDiff(Byte diff, int elementCount) {
+    if ((MAX_BYTE - MIN_BYTE) * elementCount >= 255) {
+        return true;
+    }
 
-        for(int i = 0; i < newElements.size(); i++) {
-            if (!canMakeDiff(diffs[(initialOffset + nextElementOffset + i) % 16], newElements[i])) {
-                isPossible = false;
+    int max = (elementCount * MAX_BYTE) % 256;
+    int min = (elementCount * MIN_BYTE) % 256;
+
+    if (max < min) {
+        return diff >= min || diff <= max;
+    }
+
+    return diff >= min && diff <= max;
+}
+
+void addChars(string& result, int initialCharIndex, Byte diff, int elementCount) {
+    Byte currentDiff = diff;
+
+    for(int i = 0; i < elementCount; i++) {
+        // Bruteforce, may be improved
+        for(Byte j = MIN_BYTE; j <= MAX_BYTE; j++) {
+            if (canMakeDiff(currentDiff - j, elementCount - i - 1)) {
+                result[initialCharIndex + (i * HASH_SIZE)] = j;
+                currentDiff -= j;
                 break;
             }
         }
+    }
+}
 
-        if (isPossible) {
-            // Make vectors of optimized chars
-            // Convert them to string
-            // Return it
+bool isPossible(const vector<Byte>& diffs, int elementsInserted, const vector<int>& newElements) {
+    for(int i = 0; i < newElements.size(); i++) {
+        if (!canMakeDiff(diffs[i], newElements[i])) {
+            if (elementsInserted == 49) {
+                cerr << "New elements: " <<  newElements << endl;
+            } 
+            return false;
         }
     }
 
+    return true;
 }
 
+string makePrintArea(int initialOffset, const vector<Byte>& diffs, int elementsInserted, const vector<int>& newElements) {
+    string result = string(elementsInserted, '_');
 
+    for(int i = 0; i < newElements.size(); i++) {
+        int currentIndex = (initialOffset + i) % HASH_SIZE;
+
+        addChars(result, i % HASH_SIZE, diffs[currentIndex], newElements[currentIndex]);
+    }
+
+    return result;
+}
+
+string makePrintZone(int initialOffset, const vector<Byte>& initialHash, const vector<Byte>& targetHash, const string& remainingText) {
+    vector<Byte> diffs = generateDiffs(initialOffset, initialHash, targetHash, remainingText);
+    
+    cerr << "Diffs: " << diffs << endl;
+
+    vector<int> newElements(HASH_SIZE, 0);
+
+    for(int elementsInserted = 0; ; elementsInserted++) {
+        if (isPossible(diffs, elementsInserted, newElements)) {
+            cerr << "Elements inserted: " << elementsInserted << endl;
+
+            return makePrintArea(initialOffset, diffs, elementsInserted, newElements);
+        }
+        
+        // Insert element and rotate diffs
+        newElements[(initialOffset + elementsInserted) % HASH_SIZE]++;
+
+        diffs.insert(diffs.begin(), diffs.back());
+        diffs.erase(diffs.begin() + diffs.size() - 1);
+    }
+
+    return "";
+}
 
 int main(){
     int caseCount;
-    cin >> caseCount;
+    in >> caseCount;
 
     for(int caseNumber=1; caseNumber<=caseCount; caseNumber++){
         int originalLineCount;
-        cin >> originalLineCount;
+        in >> originalLineCount;
 
-        cin.ignore();
+        in.ignore();
 
         string originalText;
 
         for(int i = 0; i < originalLineCount; i++) {
             string line;
-            getline(cin, line);
+            getline(in, line);
 
             originalText += line;
         }
 
         int alteredLineCount;
-        cin >> alteredLineCount;
+        in >> alteredLineCount;
 
-        cin.ignore();
+        in.ignore();
 
         string alteredText;
 
         for(int i = 0; i < alteredLineCount; i++) {
             string line;
-            getline(cin, line);
+            getline(in, line);
 
             alteredText += line;
         }
 
-        int printTextPosition = alteredText.find("------") + 3;
+        int printTextPosition = alteredText.find(PRINT_SEPARATOR) + PRINT_SEPARATOR.size();
 
-        vector<char> originalHash = hashText(originalText);
-        vector<char> alteredHashUntilPrintZone = hashText(alteredText.substr(0, printTextPosition));
+        vector<Byte> originalHash = hashText(originalText);
+        vector<Byte> alteredHash = hashText(alteredText);
+        vector<Byte> alteredHashUntilPrintZone = hashText(alteredText.substr(0, printTextPosition));
 
 
-        coutHash(originalHash);
+        cerr << "Original: " << originalHash << endl;
+        cerr << "Altered: " << alteredHash << endl;
+        cout << "Initial offset: " << (printTextPosition % 16) << endl;
 
-        string result = makePrintZone(printTextPosition, alteredHashUntilPrintZone, originalHash, alteredText.substr(printTextPosition))
+        string result = makePrintZone(printTextPosition, alteredHashUntilPrintZone, originalHash, alteredText.substr(printTextPosition));
 
-        cout << "Case #" << caseNumber << ": " << endl;
+        vector<Byte> finalHash = hashText(alteredText.substr(0, printTextPosition) + result + alteredText.substr(printTextPosition));
+
+        cerr << "Final: " << finalHash << endl;
+        cerr << "Result: " << (originalHash == finalHash ? "OK" : "ERROR") << endl;
+
+        cout << "Case #" << caseNumber << ": " << result << endl;
     }
 }
