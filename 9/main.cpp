@@ -129,17 +129,6 @@ vector<int> generatePossibleNumbers(vector<int>& kanjis) {
                 yield toInt(val)*/
 }
 
-mutex cerrMutex;
-int total = 0;
-
-void done() {
-    cerrMutex.lock();
-
-    total++;
-    cerr << total << endl;
-
-    cerrMutex.unlock();
-}
 
 string solve(vector<int> aKanji, vector<int> bKanji, vector<int> resultKanji) {
     for(int a : generatePossibleNumbers(aKanji)) {
@@ -156,7 +145,7 @@ string solve(vector<int> aKanji, vector<int> bKanji, vector<int> resultKanji) {
                 } else {
                     continue;
                 }
-
+                
                 return to_string(a) + " " + operand + " " + to_string(b) + " = " + to_string(result);
             }
         }
@@ -205,6 +194,7 @@ int main(){
     for(int caseNumber=1; caseNumber<=caseCount; caseNumber++){
         string result = futures[caseNumber - 1].get();
 
+        cerr << "Case #" << caseNumber << ": " << result << endl;
         cout << "Case #" << caseNumber << ": " << result << endl;
     }
 }
