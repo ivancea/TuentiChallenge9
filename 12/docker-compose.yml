@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  db:
+    image: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "tuenti_challenge"
+      MYSQL_DATABASE: "tuenti_challenge"
+      MYSQL_USER: "tuenti_challenge"
+      MYSQL_PASSWORD: "tuenti_challenge"
+    volumes:
+      - ./db:/var/lib/mysql
